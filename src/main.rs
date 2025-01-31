@@ -2,6 +2,7 @@ use std::fs;
 use std::time::Duration;
 use std::time::SystemTime;
 use std::{thread, time};
+use sysinfo::Disks;
 
 const SLEEP_TIME: Duration = time::Duration::from_millis(10000);
 const LOADAVG_FILE: &str = "/proc/loadavg";
@@ -63,9 +64,19 @@ fn generate_load_avg_values(values: &mut Vec<Value>) {
     ));
 }
 
+fn generate_disk_informations(values: &mut Vec<Value>) {
+    let disks = Disks::new_with_refreshed_list();
+    for disk in disks.list() {
+        values.push(Value::generate(
+            disk.available_space() as f64,
+            String::from(format!("Available space {:?}", disk.name())),
+        ));
+    }
+}
 fn generate_system_values() -> Vec<Value> {
     let mut values = Vec::<Value>::new();
     generate_load_avg_values(&mut values);
+    generate_disk_informations(&mut values);
     values
 }
 
