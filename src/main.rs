@@ -1,9 +1,7 @@
-use std::collections::btree_map::Values;
 use std::fs;
 use std::time::Duration;
 use std::time::SystemTime;
 use std::{thread, time};
-use sysinfo::System;
 
 const SLEEP_TIME: Duration = time::Duration::from_millis(10000);
 const LOADAVG_FILE: &str = "/proc/loadavg";
@@ -47,7 +45,7 @@ fn main() {
     }
 }
 
-fn load_avg(values: &mut Vec<Value>) {
+fn generate_load_avg_values(values: &mut Vec<Value>) {
     let binding = fs::read_to_string(LOADAVG_FILE).expect("Cannot read loadavg file");
     let mut load_avg = binding.split_whitespace();
 
@@ -67,7 +65,7 @@ fn load_avg(values: &mut Vec<Value>) {
 
 fn generate_system_values() -> Vec<Value> {
     let mut values = Vec::<Value>::new();
-    load_avg(&mut values);
+    generate_load_avg_values(&mut values);
     values
 }
 
