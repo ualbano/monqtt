@@ -8,14 +8,38 @@ const SLEEP_TIME: Duration = time::Duration::from_millis(10000);
 const LOADAVG_FILE: &str = "/proc/loadavg";
 
 #[derive(Debug)]
+enum ValueType {
+    PERCENT(f32),
+    SIMPLE(f32),
+}
+
+impl ValueType {
+    fn unit(&self) -> &str {
+        match self {
+            ValueType::PERCENT(_) => "%",
+            _other => "",
+        }
+    }
+}
+
+impl ValueType {
+    fn to_str(&self) -> String {
+        match self {
+            ValueType::PERCENT(value) => format!("{0:.2} {1}", value, self.unit()),
+            ValueType::SIMPLE(value) => format!("{0:.2} {1}", value, self.unit()),
+        }
+    }
+}
+
+#[derive(Debug)]
 struct Value {
-    value: f64,
+    value: ValueType,
     label: String,
     time: SystemTime,
 }
 
 impl Value {
-    fn generate(value: f64, label: String) -> Self {
+    fn generate(value: ValueType, label: String) -> Self {
         Value {
             value,
             label,
@@ -33,7 +57,9 @@ impl Value {
             .as_secs();
         String::from(format!(
             "[{0}] {1}: {2}",
-            epoch_time, self.label, self.value
+            epoch_time,
+            self.label,
+            self.value.to_str()
         ))
     }
 }
@@ -51,25 +77,38 @@ fn generate_load_avg_values(values: &mut Vec<Value>) {
     let mut load_avg = binding.split_whitespace();
 
     values.push(Value::generate(
-        load_avg.next().expect("").parse().expect(""),
-        String::from("loadavg_1"),
+        ValueType::SIMPLE(load_avg.next().expect("").parse().expect("")),
+        String::from("loadavg/1"),
     ));
     values.push(Value::generate(
-        load_avg.next().expect("").parse().expect(""),
-        String::from("loadavg_5"),
+        ValueType::SIMPLE(load_avg.next().expect("").parse().expect("")),
+        String::from("loadavg/5"),
     ));
     values.push(Value::generate(
-        load_avg.next().expect("").parse().expect(""),
-        String::from("loadavg_15"),
+        ValueType::SIMPLE(load_avg.next().expect("").parse().expect("")),
+        String::from("loadavg/"),
     ));
 }
 
 fn generate_disk_informations(values: &mut Vec<Value>) {
     let disks = Disks::new_with_refreshed_list();
     for disk in disks.list() {
+        let available_space = disk.available_space() as f32 / disk.total_space() as f32;
+        let disk_name: String = String::from(
+            disk.name()
+                .to_str()
+                .expect("Cannot convert disk name to string"),
+        );
+
+        let disk_name: String = disk_name
+            .split("/")
+            .last()
+            .expect("Cannot parse disk name")
+            .parse()
+            .expect("Cannot parse disk name");
         values.push(Value::generate(
-            disk.available_space() as f64,
-            String::from(format!("Available space {:?}", disk.name())),
+            ValueType::PERCENT(available_space),
+            String::from(format!("available_space/{}", disk_name)),
         ));
     }
 }
