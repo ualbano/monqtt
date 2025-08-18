@@ -1,12 +1,12 @@
-use std::time::SystemTime;
+use std::{fmt::Display, time::SystemTime};
 
 #[derive(Debug)]
-enum ValueType {
-    PERCENT(f32),
-    SIMPLE(f32),
+enum ValueType<T: Display> {
+    PERCENT(T),
+    SIMPLE(T),
 }
 
-impl ValueType {
+impl<T: Display> ValueType<T> {
     fn unit(&self) -> &str {
         match self {
             ValueType::PERCENT(_) => "%",
@@ -15,7 +15,7 @@ impl ValueType {
     }
 }
 
-impl ValueType {
+impl<T: Display> ValueType<T> {
     fn to_str(&self) -> String {
         match self {
             ValueType::PERCENT(value) => format!("{0:.2} {1}", value, self.unit()),
@@ -25,14 +25,14 @@ impl ValueType {
 }
 
 #[derive(Debug)]
-pub struct Value {
-    value: ValueType,
+pub struct Value<T: Display> {
+    value: ValueType<T>,
     label: String,
     time: SystemTime,
 }
 
-impl Value {
-    pub fn simple(value: f32, label: String) -> Self {
+impl<T: Display> Value<T> {
+    pub fn simple(value: T, label: String) -> Self {
         Value {
             value: ValueType::SIMPLE(value),
             label,
@@ -41,8 +41,8 @@ impl Value {
     }
 }
 
-impl Value {
-    pub fn percentage(value: f32, label: String) -> Self {
+impl<T: Display> Value<T> {
+    pub fn percentage(value: T, label: String) -> Self {
         Value {
             value: ValueType::PERCENT(value),
             label,
@@ -51,7 +51,7 @@ impl Value {
     }
 }
 
-impl Value {
+impl<T: Display> Value<T> {
     pub fn to_string(&self) -> String {
         let epoch_time = self
             .time

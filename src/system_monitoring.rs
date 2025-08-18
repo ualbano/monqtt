@@ -6,7 +6,7 @@ use values::Value;
 
 const LOADAVG_FILE: &str = "/proc/loadavg";
 
-fn generate_load_avg_values(values: &mut Vec<Value>) {
+fn generate_load_avg_values(values: &mut Vec<Value<f32>>) {
     let binding = fs::read_to_string(LOADAVG_FILE).expect("Cannot read loadavg file");
     let mut load_avg = binding.split_whitespace();
 
@@ -24,7 +24,7 @@ fn generate_load_avg_values(values: &mut Vec<Value>) {
     ));
 }
 
-fn generate_disk_informations(values: &mut Vec<Value>) {
+fn generate_disk_informations(values: &mut Vec<Value<f32>>) {
     let disks = Disks::new_with_refreshed_list();
     for disk in disks.list() {
         let available_space = disk.available_space() as f32 / disk.total_space() as f32;
@@ -46,14 +46,14 @@ fn generate_disk_informations(values: &mut Vec<Value>) {
         ));
     }
 }
-pub fn generate_system_values() -> Vec<Value> {
-    let mut values = Vec::<Value>::new();
+pub fn generate_system_values() -> Vec<Value<f32>> {
+    let mut values = Vec::<Value<f32>>::new();
     generate_load_avg_values(&mut values);
     generate_disk_informations(&mut values);
     values
 }
 
-pub fn print_system_values(system_values: &Vec<Value>) {
+pub fn print_system_values(system_values: &Vec<Value<f32>>) {
     for system_value in system_values {
         println!("{}", system_value.to_string())
     }
