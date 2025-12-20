@@ -1,57 +1,35 @@
-use std::{fmt::Display, time::SystemTime};
+use std::time::SystemTime;
+
+use crate::system_monitoring::types::{Export, Percentage, Simple};
 
 #[derive(Debug)]
-enum ValueType<T: Display> {
-    PERCENT(T),
-    SIMPLE(T),
-}
-
-impl<T: Display> ValueType<T> {
-    fn unit(&self) -> &str {
-        match self {
-            ValueType::PERCENT(_) => "%",
-            _other => "",
-        }
-    }
-}
-
-impl<T: Display> ValueType<T> {
-    fn to_str(&self) -> String {
-        match self {
-            ValueType::PERCENT(value) => format!("{0:.2} {1}", value, self.unit()),
-            ValueType::SIMPLE(value) => format!("{0:.2} {1}", value, self.unit()),
-        }
-    }
-}
-
-#[derive(Debug)]
-pub struct Value<T: Display> {
-    value: ValueType<T>,
+pub struct Value<T: Export> {
+    value: T,
     label: String,
     time: SystemTime,
 }
 
-impl<T: Display> Value<T> {
-    pub fn simple(value: T, label: String) -> Self {
+impl Value<Simple> {
+    pub fn simple(value: f32, label: String) -> Value<Simple> {
         Value {
-            value: ValueType::SIMPLE(value),
+            value: Simple { value: value },
             label,
             time: SystemTime::now(),
         }
     }
 }
 
-impl<T: Display> Value<T> {
-    pub fn percentage(value: T, label: String) -> Self {
+impl Value<Percentage> {
+    pub fn percentage(value: f32, label: String) -> Self {
         Value {
-            value: ValueType::PERCENT(value),
+            value: Percentage { value: value },
             label,
             time: SystemTime::now(),
         }
     }
 }
 
-impl<T: Display> Value<T> {
+impl<T: Export> Value<T> {
     pub fn to_string(&self) -> String {
         let epoch_time = self
             .time
@@ -62,7 +40,7 @@ impl<T: Display> Value<T> {
             "[{0}] {1}: {2}",
             epoch_time,
             self.label,
-            self.value.to_str()
+            self.value.export_to_string()
         ))
     }
 }
