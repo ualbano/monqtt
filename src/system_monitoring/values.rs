@@ -1,46 +1,46 @@
 use std::time::SystemTime;
 
-use crate::system_monitoring::types::{Export, Percentage, Simple};
+fn format_string<T>(time: &SystemTime, label: &String, value: T, unit: char) -> String
+where
+    T: std::fmt::Display,
+{
+    let epoch_time = time
+        .duration_since(SystemTime::UNIX_EPOCH)
+        .expect("Failed to parse time")
+        .as_secs();
+
+    String::from(format!(
+        "[{0}] {1}: {2:.2} {3}",
+        epoch_time, label, value, unit
+    ))
+}
+
+pub trait Export {
+    fn export_to_string(&self) -> String;
+}
 
 #[derive(Debug)]
-pub struct Value<T: Export> {
-    value: T,
-    label: String,
-    time: SystemTime,
+pub struct SimpleValue {
+    pub value: f32,
+    pub label: String,
+    pub time: SystemTime,
 }
 
-impl Value<Simple> {
-    pub fn simple(value: f32, label: String) -> Value<Simple> {
-        Value {
-            value: Simple { value: value },
-            label,
-            time: SystemTime::now(),
-        }
+impl Export for SimpleValue {
+    fn export_to_string(&self) -> String {
+        format_string(&self.time, &self.label, &self.value, ' ')
     }
 }
 
-impl Value<Percentage> {
-    pub fn percentage(value: f32, label: String) -> Self {
-        Value {
-            value: Percentage { value: value },
-            label,
-            time: SystemTime::now(),
-        }
-    }
+#[derive(Debug)]
+pub struct PercentageValue {
+    pub value: f32,
+    pub label: String,
+    pub time: SystemTime,
 }
 
-impl<T: Export> Value<T> {
-    pub fn to_string(&self) -> String {
-        let epoch_time = self
-            .time
-            .duration_since(SystemTime::UNIX_EPOCH)
-            .expect("Failed to parse time")
-            .as_secs();
-        String::from(format!(
-            "[{0}] {1}: {2}",
-            epoch_time,
-            self.label,
-            self.value.export_to_string()
-        ))
+impl Export for PercentageValue {
+    fn export_to_string(&self) -> String {
+        format_string(&self.time, &self.label, &self.value, '%')
     }
 }
