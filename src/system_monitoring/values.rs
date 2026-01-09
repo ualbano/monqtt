@@ -1,68 +1,46 @@
 use std::time::SystemTime;
 
-#[derive(Debug)]
-enum ValueType {
-    PERCENT(f32),
-    SIMPLE(f32),
+fn format_string<T>(time: &SystemTime, label: &String, value: T, unit: char) -> String
+where
+    T: std::fmt::Display,
+{
+    let epoch_time = time
+        .duration_since(SystemTime::UNIX_EPOCH)
+        .expect("Failed to parse time")
+        .as_secs();
+
+    String::from(format!(
+        "[{0}] {1}: {2:.2} {3}",
+        epoch_time, label, value, unit
+    ))
 }
 
-impl ValueType {
-    fn unit(&self) -> &str {
-        match self {
-            ValueType::PERCENT(_) => "%",
-            _other => "",
-        }
-    }
-}
-
-impl ValueType {
-    fn to_str(&self) -> String {
-        match self {
-            ValueType::PERCENT(value) => format!("{0:.2} {1}", value, self.unit()),
-            ValueType::SIMPLE(value) => format!("{0:.2} {1}", value, self.unit()),
-        }
-    }
+pub trait Export {
+    fn export_to_string(&self) -> String;
 }
 
 #[derive(Debug)]
-pub struct Value {
-    value: ValueType,
-    label: String,
-    time: SystemTime,
+pub struct SimpleValue {
+    pub value: f32,
+    pub label: String,
+    pub time: SystemTime,
 }
 
-impl Value {
-    pub fn simple(value: f32, label: String) -> Self {
-        Value {
-            value: ValueType::SIMPLE(value),
-            label,
-            time: SystemTime::now(),
-        }
+impl Export for SimpleValue {
+    fn export_to_string(&self) -> String {
+        format_string(&self.time, &self.label, &self.value, ' ')
     }
 }
 
-impl Value {
-    pub fn percentage(value: f32, label: String) -> Self {
-        Value {
-            value: ValueType::PERCENT(value),
-            label,
-            time: SystemTime::now(),
-        }
-    }
+#[derive(Debug)]
+pub struct PercentageValue {
+    pub value: f32,
+    pub label: String,
+    pub time: SystemTime,
 }
 
-impl Value {
-    pub fn to_string(&self) -> String {
-        let epoch_time = self
-            .time
-            .duration_since(SystemTime::UNIX_EPOCH)
-            .expect("Failed to parse time")
-            .as_secs();
-        String::from(format!(
-            "[{0}] {1}: {2}",
-            epoch_time,
-            self.label,
-            self.value.to_str()
-        ))
+impl Export for PercentageValue {
+    fn export_to_string(&self) -> String {
+        format_string(&self.time, &self.label, &self.value, '%')
     }
 }
